@@ -112,7 +112,7 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                 anchorNode.worldScale = Vector3(1f, 1f, 1f)
                 arFragment.arSceneView.scene.addChild(anchorNode)
                 futures.add(ModelRenderable.builder()
-                    .setSource(this, Uri.parse("models/rainbow_morph_animation.glb"))
+                    .setSource(this, Uri.parse("models/mech_drone.glb"))
                     .setIsFilamentGltf(true)
                     .build()
                     .thenAccept { model ->
@@ -125,8 +125,8 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                         modelNode.localRotation = Quaternion.multiply(rotation, newRotation)
 
                         modelNode.localPosition = Vector3(0.0f, 0f, 0.06f)
-                        modelNode.scaleController.maxScale = 0.02f;
-                        modelNode.scaleController.minScale = 0.01f;
+//                        modelNode.scaleController.maxScale = 0.02f
+//                        modelNode.scaleController.minScale = 0.01f
 
                         modelNode.setRenderable(model).animate(true).start()
                         anchorNode.addChild(modelNode)
