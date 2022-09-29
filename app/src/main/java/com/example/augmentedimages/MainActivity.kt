@@ -112,21 +112,23 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                 anchorNode.worldScale = Vector3(1f, 1f, 1f)
                 arFragment.arSceneView.scene.addChild(anchorNode)
                 futures.add(ModelRenderable.builder()
-                    .setSource(this, Uri.parse("models/Rabbit.glb"))
+                    .setSource(this, Uri.parse("models/rainbow_morph_animation.glb"))
                     .setIsFilamentGltf(true)
                     .build()
                     .thenAccept { model ->
                         val modelNode =
                             TransformableNode(arFragment.transformationSystem)
 
-                        modelNode.setRenderable(model).animate(true).start()
 
                         val rotation = modelNode.localRotation
                         val newRotation = Quaternion.axisAngle(Vector3(1f, 0f, 0f), -90f)
                         modelNode.localRotation = Quaternion.multiply(rotation, newRotation)
 
-                        modelNode.localScale = Vector3(.02f, .02f, .02f)
                         modelNode.localPosition = Vector3(0.0f, 0f, 0.06f)
+                        modelNode.scaleController.maxScale = 0.02f;
+                        modelNode.scaleController.minScale = 0.01f;
+
+                        modelNode.setRenderable(model).animate(true).start()
                         anchorNode.addChild(modelNode)
 
                     }
