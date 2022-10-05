@@ -8,6 +8,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
+import android.widget.Button
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
@@ -38,17 +39,30 @@ import java.io.FileOutputStream
 import java.net.URL
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
+import kotlin.system.exitProcess
 
 class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
     BaseArFragment.OnSessionConfigurationListener {
     private val futures: MutableList<CompletableFuture<Void>> = ArrayList()
     private lateinit var arFragment: ArFragment
     private var rabbitDetected = false
+    private var session: Session? = null
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         setContentView(R.layout.activity_main)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
+        val exitButton = findViewById<Button>(R.id.exitButton)
+        exitButton.setOnClickListener {
+            try {
+                arFragment.destroy()
+                session?.close()
+                File(cacheDir.absolutePath, "model.glb").deleteRecursively()
+                exitProcess(0)
+            } catch (e: Exception) {
+                Toast.makeText(this, "Error closing session", Toast.LENGTH_LONG)
+            }
+        }
         setSupportActionBar(toolbar)
         ViewCompat.setOnApplyWindowInsetsListener(toolbar) { _: View?, insets: WindowInsetsCompat ->
             (toolbar.layoutParams as MarginLayoutParams).topMargin = insets
@@ -76,6 +90,7 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
 
     override fun onSessionConfiguration(session: Session?, config: Config) {
         // Disable plane detection
+        this.session = session
         config.planeFindingMode = Config.PlaneFindingMode.DISABLED
 
         // Images to be detected by our AR need to be added in AugmentedImageDatabase
@@ -118,7 +133,7 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
             anchorNode.parent = arFragment.arSceneView.scene
 
 
-            // If rabbit model haven't been placed yet and detected image has String identifier of "rabbit"
+            // If  model haven't been placed yet and detected image has String identifier of "rabbit"
             // This is also example of model loading and placing at runtime
             if (!rabbitDetected && augmentedImage.name.equals("world")) {
                 rabbitDetected = true
@@ -136,8 +151,6 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                     .thenAccept { model ->
                         val modelNode =
                             TransformableNode(arFragment.transformationSystem)
-
-
                         val rotation = modelNode.localRotation
                         val newRotation = Quaternion.axisAngle(Vector3(1f, 0f, 0f), -90f)
                         modelNode.localRotation = Quaternion.multiply(rotation, newRotation)
@@ -164,7 +177,6 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
 
                                 val newRotation = Quaternion.axisAngle(Vector3(1f, 0f, 0f), -90f)
                                 localRotation = Quaternion.multiply(localRotation, newRotation)
-//
                                 localPosition = Vector3(0.0f, 0f, 0.0f)
                                 localScale = Vector3(0.7f, 0.7f, 0.7f)
                                 renderable = view
@@ -195,7 +207,7 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                 stream.copyTo(output)
                 print("Model downloaded")
             }
-        }catch (e:Exception){
+        } catch (e: Exception) {
             Toast.makeText(this, "Error downloading model.", Toast.LENGTH_LONG)
         }
     }
