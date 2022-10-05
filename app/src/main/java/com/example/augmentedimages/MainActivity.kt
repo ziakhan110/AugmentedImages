@@ -1,8 +1,11 @@
 package com.example.augmentedimages
 
+import android.app.DownloadManager
+import android.content.Context
 import android.graphics.BitmapFactory
 import android.net.Uri
 import android.os.Bundle
+import android.os.Environment
 import android.view.View
 import android.view.ViewGroup.MarginLayoutParams
 import android.widget.Toast
@@ -15,7 +18,6 @@ import androidx.fragment.app.FragmentManager
 import androidx.fragment.app.FragmentOnAttachListener
 import com.google.ar.core.*
 import com.google.ar.sceneform.AnchorNode
-import com.google.ar.sceneform.Node
 import com.google.ar.sceneform.Sceneform
 import com.google.ar.sceneform.math.Quaternion
 import com.google.ar.sceneform.math.Vector3
@@ -25,6 +27,15 @@ import com.google.ar.sceneform.ux.ArFragment
 import com.google.ar.sceneform.ux.BaseArFragment
 import com.google.ar.sceneform.ux.InstructionsController
 import com.google.ar.sceneform.ux.TransformableNode
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import java.io.BufferedInputStream
+import java.io.File
+import java.io.FileInputStream
+import java.io.FileOutputStream
+import java.net.URL
 import java.util.concurrent.CompletableFuture
 import java.util.function.Consumer
 
@@ -35,6 +46,7 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
     private var rabbitDetected = false
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         setContentView(R.layout.activity_main)
         val toolbar = findViewById<Toolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
@@ -51,6 +63,8 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                     .commit()
             }
         }
+        downloadModel("https://firebasestorage.googleapis.com/v0/b/augmentedimages-e27ae.appspot.com/o/mech_drone.glb?alt=media&token=4c39cfa8-d257-488c-9389-37d1be80fcc2")
+        Toast.makeText(this, "Downloading model", Toast.LENGTH_LONG)
     }
 
     override fun onAttachFragment(fragmentManager: FragmentManager, fragment: Fragment) {
@@ -111,8 +125,12 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                 Toast.makeText(this, "Image tag detected", Toast.LENGTH_LONG).show()
                 anchorNode.worldScale = Vector3(1f, 1f, 1f)
                 arFragment.arSceneView.scene.addChild(anchorNode)
+
                 futures.add(ModelRenderable.builder()
-                    .setSource(this, Uri.parse("models/mech_drone.glb"))
+                    .setSource(
+                        this,
+                        Uri.parse(cacheDir.path + "/model.glb")
+                    )
                     .setIsFilamentGltf(true)
                     .build()
                     .thenAccept { model ->
@@ -125,15 +143,12 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                         modelNode.localRotation = Quaternion.multiply(rotation, newRotation)
 
                         modelNode.localPosition = Vector3(0.0f, 0f, 0.06f)
-//                        modelNode.scaleController.maxScale = 0.02f
-//                        modelNode.scaleController.minScale = 0.01f
-
                         modelNode.setRenderable(model).animate(true).start()
                         anchorNode.addChild(modelNode)
 
                     }
                     .exceptionally {
-                        Toast.makeText(this, "Unable to load rabbit model", Toast.LENGTH_LONG)
+                        Toast.makeText(this, "Unable to load model", Toast.LENGTH_LONG)
                             .show()
                         null
                     })
@@ -169,6 +184,19 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
             arFragment.instructionsController.setEnabled(
                 InstructionsController.TYPE_AUGMENTED_IMAGE_SCAN, false
             )
+        }
+    }
+
+    private fun downloadModel(url: String) {
+        try {
+            CoroutineScope(Dispatchers.IO).launch {
+                val stream = URL(url).openStream()
+                val output = FileOutputStream(File(cacheDir.absolutePath, "model.glb"))
+                stream.copyTo(output)
+                print("Model downloaded")
+            }
+        }catch (e:Exception){
+            Toast.makeText(this, "Error downloading model.", Toast.LENGTH_LONG)
         }
     }
 }
