@@ -190,6 +190,29 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                         }
                 )
 
+                futures.add(
+                    ViewRenderable.builder()
+                        .setView(this, R.layout.image_view)
+                        .build()
+                        .thenAccept { view ->
+                            val viewNode = TransformableNode(arFragment.transformationSystem)
+                            viewNode.apply {
+
+                                val newRotation = Quaternion.axisAngle(Vector3(2f, 0f, 0f), -90f)
+                                localRotation = Quaternion.multiply(localRotation, newRotation)
+                                localPosition = Vector3(0.0f, 0f, 0.0f)
+                                localScale = Vector3(0.7f, 0.7f, 0.7f)
+                                renderable = view
+                                anchorNode.addChild(viewNode)
+                            }
+
+                        }
+                        .exceptionally {
+                            Toast.makeText(this, "Unable to load image", Toast.LENGTH_LONG).show()
+                            null
+                        }
+                )
+
             }
         }
         if (rabbitDetected) {
