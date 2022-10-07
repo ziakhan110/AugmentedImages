@@ -198,9 +198,9 @@ class MainActivity : AppCompatActivity(), FragmentOnAttachListener,
                             val viewNode = TransformableNode(arFragment.transformationSystem)
                             viewNode.apply {
 
-                                val newRotation = Quaternion.axisAngle(Vector3(2f, 0f, 0f), -90f)
+                                val newRotation = Quaternion.axisAngle(Vector3(1f, 0f, 0f), -90f)
                                 localRotation = Quaternion.multiply(localRotation, newRotation)
-                                localPosition = Vector3(0.0f, 0f, 0.0f)
+                                localPosition = Vector3(0.0f, .05f, 0.1f)
                                 localScale = Vector3(0.7f, 0.7f, 0.7f)
                                 renderable = view
                                 anchorNode.addChild(viewNode)
